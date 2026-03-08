@@ -14,7 +14,7 @@ import {
 export interface File{
     id: string,
     OwnderId: string,
-    OwnderName:string,
+    OwnerName:string,
     Title: string,
     lastModified: Timestamp,
 }
