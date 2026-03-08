@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { createDoc, getUserDocs, File } from "@/lib/document";
+import { createDoc, getUserDocs, File ,loadCells,saveCells} from "@/lib/document";
 import { handleClientScriptLoad } from "next/script";
 
 
@@ -86,18 +86,20 @@ export default function Dashboard(){
                             <div
                                 key={doc.id}
                                 onClick={() => router.push(`/doc/${doc.id}`)}
-                                className="bg-white border rounded-lg px-5 py-4 flex items-center justify-between cursor-pointer hover:shadow-sm transition"
+                                className="bg-black border border-white rounded-lg px-5 py-4 flex items-center justify-between cursor-pointer hover:shadow-md shadow-white transition mb-6"
                             >
-                                <div>
+                                <div className="w-full">
                                 <p className="font-medium">{doc.Title}</p>
-                                <p className="text-sm text-gray-400">
-                                    by {doc.OwnerName} ·{" "}
-                                    {doc.lastModified?.toDate
-                                    ? doc.lastModified.toDate().toLocaleDateString()
-                                    : "Just now"}
-                                </p>
+                                <div className="flex justify-between text-md text-gray-400 w-full">
+                                    <span>By {doc.OwnerName}</span>
+                                    <span>
+                                        {doc.lastModified?.toDate
+                                        ? doc.lastModified.toDate().toLocaleDateString()
+                                        : "Just now"}
+                                    </span>
                                 </div>
-                                <span className="text-gray-300 text-xl">→</span>
+                                </div>
+                                <span className="ml-1 text-gray-300 text-xl">→</span>
                             </div>
                     ))}
           </div>
