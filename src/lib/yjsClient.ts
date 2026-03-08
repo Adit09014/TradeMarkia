@@ -9,7 +9,7 @@ export async function getYjsDoc(docId: string, user: { name: string; color: stri
   const { WebsocketProvider } = await import("y-websocket");
 
   const provider = new WebsocketProvider(
-    "http://localhost:1234/",
+    "yjs-server-production-a92c.up.railway.app",
     `collabsheet-${docId}`,
     ydoc
   );
