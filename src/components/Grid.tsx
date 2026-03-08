@@ -15,12 +15,18 @@ export interface Cell{
 
 export type SheetData=Record<string,Cell>;
 
+
+
 export interface GridProps{
     data: SheetData,
     onChange: (cellId: string, raw: string) => void;
+    onFormat: (cellId: string, format: Partial<Cell>) => void;
+    onExport: () => void;
 }
 
-export default function Grid({ data, onChange }: GridProps) {
+
+
+export default function Grid({ data, onChange,onFormat,onExport }: GridProps) {
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -39,28 +45,38 @@ export default function Grid({ data, onChange }: GridProps) {
     setEditingCell(null);
   }, [editValue, onChange]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, col: string, row: number) => {
-    const cellId = getCellId(col, row);
-    const colIdx = COLS.indexOf(col);
+  const selectedCellData = selectedCell ? data[selectedCell] : null;
 
-    if (editingCell === cellId) {
-      if (e.key === "Enter") { commitEdit(cellId); setSelectedCell(getCellId(col, row + 1)); }
-      else if (e.key === "Escape") { setEditingCell(null); }
-      else if (e.key === "Tab") { e.preventDefault(); commitEdit(cellId); setSelectedCell(getCellId(COLS[colIdx + 1] || col, row)); }
-      return;
-    }
-
-    if (e.key === "ArrowUp") setSelectedCell(getCellId(col, Math.max(1, row - 1)));
-    else if (e.key === "ArrowDown") setSelectedCell(getCellId(col, row + 1));
-    else if (e.key === "ArrowLeft") setSelectedCell(getCellId(COLS[Math.max(0, colIdx - 1)], row));
-    else if (e.key === "ArrowRight") setSelectedCell(getCellId(COLS[Math.min(25, colIdx + 1)], row));
-    else if (e.key === "Enter" || e.key === "F2") startEdit(cellId);
-    else if (e.key === "Tab") { e.preventDefault(); setSelectedCell(getCellId(COLS[Math.min(25, colIdx + 1)], row)); }
-    else if (e.key.length === 1) { setEditValue(e.key); startEdit(cellId); }
-  }, [editingCell, commitEdit, startEdit]);
+  
 
   return (
     <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-1 border-b bg-black text-sm">
+        <button
+          onClick={() => selectedCell && onFormat(selectedCell, { bold: !selectedCellData?.bold })}
+          className={`px-2 py-1 rounded font-bold border ${selectedCellData?.bold ? "bg-gray-200" : "hover:bg-gray-100"}`}
+          title="Bold"
+        >B</button>
+        <button
+          onClick={() => selectedCell && onFormat(selectedCell, { italic: !selectedCellData?.italic })}
+          className={`px-2 py-1 rounded italic border ${selectedCellData?.italic ? "bg-gray-200" : "hover:bg-gray-100"}`}
+          title="Italic"
+        >I</button>
+        <input
+          type="color"
+          title="Text color"
+          value={selectedCellData?.color || "#000000"}
+          onChange={(e) => selectedCell && onFormat(selectedCell, { color: e.target.value })}
+          className="w-7 h-7 rounded border cursor-pointer"
+        />
+        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <button
+          onClick={onExport}
+          className="px-3 py-1 rounded border hover:bg-gray-100 text-xs"
+        >
+          Export CSV
+        </button>
+      </div>
       {/* Formula bar */}
       <div className="flex items-center gap-2 px-3 py-1 border-b bg-black text-sm">
         <span className="text-gray-400 w-12 text-center font-mono border rounded px-1">
@@ -107,7 +123,6 @@ export default function Grid({ data, onChange }: GridProps) {
                         isSelected ? "outline-2 outline-blue-500 z-10" : ""
                       }`}
                       onClick={() => { setSelectedCell(cellId); if (!isEditing) startEdit(cellId); }}
-                      onKeyDown={(e) => handleKeyDown(e, col, row)}
                       tabIndex={0}
                       style={{
                         fontWeight: cell?.bold ? "bold" : undefined,
@@ -121,11 +136,11 @@ export default function Grid({ data, onChange }: GridProps) {
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onBlur={() => commitEdit(cellId)}
-                          onKeyDown={(e) => handleKeyDown(e, col, row)}
                           className="w-full h-full px-1 outline-none border-none bg-gray-400 font-mono text-sm absolute inset-0 text-black"
                         />
                       ) : (
-                        <span className="px-1 truncate block w-full h-full leading-7 text-black">
+                        <span className="px-1 truncate block w-full h-full leading-7" 
+                        style={{color: cell?.color || "black"}}>
                           {cell?.computed || ""}
                         </span>
                       )}

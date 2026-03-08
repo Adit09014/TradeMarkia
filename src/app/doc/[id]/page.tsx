@@ -9,6 +9,8 @@ import { getYjsDoc } from "@/lib/yjsClient";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import {  loadCells,saveCells} from "@/lib/document";
+import { doc, onSnapshot, setDoc, getDoc, collection, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 
 interface AwarenessUser{
@@ -27,9 +29,41 @@ export default function EditorPage() {
   const yMapRef = useRef<Y.Map<any> | null>(null);
   const providerRef = useRef<any>(null);
   const router=useRouter();
+  const [title, setTitle] = useState("Untitled Spreadsheet");
+  const [editingTitle, setEditingTitle] = useState(false);
+  
+
+  const handleFormat = useCallback((cellId: string, format: Partial<Cell>) => {
+    const updatedCell = { ...(data[cellId] || { raw: "", computed: "" }), ...format };
+    const updatedData = { ...data, [cellId]: updatedCell };
+    setData(updatedData);
+    setDoc(doc(db, "cells", id), { cells: updatedData }).catch(console.error);
+  }, [data, id]);
+
+const handleExport = useCallback(() => {
+  const COLS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+  const rows = Array.from({ length: 50 }, (_, i) => i + 1);
+  const csv = rows.map((row) =>
+    COLS.map((col) => {
+      const val = data[`${col}${row}`]?.computed || "";
+      return val.includes(",") ? `"${val}"` : val;
+    }).join(",")
+  ).join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "spreadsheet.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}, [data]);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
+    getDoc(doc(db, "documents", id)).then((snap) => {
+      if (snap.exists()) setTitle(snap.data().title || "Untitled Spreadsheet");
+    });
   }, [user, loading, router]);
 
  useEffect(() => {
@@ -131,7 +165,32 @@ export default function EditorPage() {
         >
           ← Home
         </button>
-        <span className="font-semibold text-sm">Untitled Spreadsheet</span>
+        {editingTitle ? (
+          <input
+            autoFocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={() => {
+              setEditingTitle(false);
+              setDoc(doc(db, "documents", id), { title }, { merge: true });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setEditingTitle(false);
+                setDoc(doc(db, "documents", id), { title }, { merge: true });
+              }
+            }}
+            className="font-semibold text-sm border-b border-gray-400 outline-none bg-transparent"
+          />
+        ) : (
+          <span
+            className="font-semibold text-sm cursor-pointer hover:text-gray-500"
+            onClick={() => setEditingTitle(true)}
+            title="Click to rename"
+          >
+            {title}
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-3">
           <span className={`text-xs ${saveStatus === "saving" ? "text-orange-400" : "text-green-500"}`}>
             {saveStatus === "saving" ? "Saving..." : "✓ Saved"}
@@ -162,7 +221,7 @@ export default function EditorPage() {
 
       {/* Grid */ }
       <div className="flex-1 overflow-hidden">
-        <Grid data={data} onChange={handleChange} />
+        <Grid data={data} onChange={handleChange} onFormat={handleFormat} onExport={handleExport} />
       </div>
     </div>
   );

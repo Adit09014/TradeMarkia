@@ -31,8 +31,8 @@ export default function LoginPage() {
 
             {mode==="choose" &&(
                 <div className="space-y-3 pt-2">
-                    <button onClick={handleGoogle} className="w-full bg-black rounded-lg font-semibold hover:bg-gray-800 transition">Sign In with Google</button>
-                    <button onClick={()=> setMode("name")} className="w-full bg-black rounded-lg font-semibold hover:bg-gray-600 transition">Continue with display name</button>
+                    <button onClick={handleGoogle} className="py-3 px-6 w-full bg-black rounded-3xl font-semibold hover:bg-gray-800 transition">Sign In with Google</button>
+                    <button onClick={()=> setMode("name")} className="py-3 px-6 w-full bg-black rounded-3xl font-semibold hover:bg-gray-600 transition">Continue with display name</button>
                 </div>
 
             )}
